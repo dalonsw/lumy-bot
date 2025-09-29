@@ -1,0 +1,7 @@
+__pycache__/
+.env
+puter_token.pkl
+venv/
+pycache/
+
+TODO.md
