@@ -8,4 +8,6 @@ Este projeto é um assistente virtual desenvolvido em Python, que utiliza vária
 - Integração com o ChatGPT via API
 - [Em desenvolvimento]
 
+```
 -- Em desenvolvimento --
+```
