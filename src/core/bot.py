@@ -1,32 +1,49 @@
-from src.services.puter_ai import perguntar_puter
-from src.services.transcribe_audio import listen_mic
-from src.services.audio_to_text import speak
+import os
+import json
+
+from functools import wraps
+from src.models.ai_agent import AIAgent
+from src.models.audio_controller import EntradaAudio, SaidaAudio
+from src.core.servicos import bot_servicos
+
+debug = True
+
+agenteIA = AIAgent("Zeca", max_tokens=500)
+agenteIA.conectar()
+entrada_audio = EntradaAudio()
+saida_audio = SaidaAudio()
+on = True
 
 def bot_main():
-    try:
-        bot_listen()
-    
-    except Exception as e:
-        speak("Ocorreu um erro no assistente. Por favor, tente novamente.")
+    while on:
+        try:
+            if debug:
+                bot_debug_mode()
+            else:
+                bot_listen()
+        except Exception as e:
+            print(f"Erro: {e}")
 
 def bot_listen():
-    pergunta = listen_mic()
-
+    pergunta = entrada_audio.ouvir_microfone()
     if pergunta:
-        resposta = perguntar_puter(pergunta)
-        
-        if "buscaDataAtual" in resposta:
-            from datetime import datetime
-            data_atual = datetime.now().strftime("%d/%m/%Y")
-            speak(f"A data atual é {data_atual}.")
-        else:
-            speak(resposta)
-
-        if "buscaHoraAtual" in resposta:
-            from datetime import datetime
-            hora_atual = datetime.now().strftime("%H:%M")
-            speak(f"A hora atual é {hora_atual}.")
-        else:
-            speak(resposta)
+        resposta = json.loads(agenteIA.perguntar(pergunta))
+        agenteIA.salvar_ultima_mensagem(pergunta, resposta['mensagem'])
+        saida_audio.falar(resposta)
     else:
-        speak("Desculpe, não entendi sua pergunta.")
+        saida_audio.falar("Desculpe, não entendi sua pergunta.")
+
+def bot_debug_mode():
+    pergunta = input("[MODO DEBUG] Insira sua pergunta: ")
+    resposta = json.loads(agenteIA.perguntar(pergunta))
+    agenteIA.salvar_ultima_mensagem(pergunta, resposta['mensagem'])
+    if resposta["tipo"] == "funcao":
+        funcao_nome = resposta["mensagem"]
+        parametros = resposta.get("parametros", {})
+        try:
+            resultado_funcao = bot_servicos(funcao_nome, **parametros)
+        except Exception as e:
+            print(f"Erro ao executar a função {funcao_nome}: {e}")
+    print(resposta)
+
+    
