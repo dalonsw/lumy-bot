@@ -4,6 +4,6 @@ puter_token.pkl
 venv/
 pycache/
 .cache
-vscode/
+.vscode/
 
 TODO.md
