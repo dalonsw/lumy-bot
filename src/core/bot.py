@@ -1,9 +1,8 @@
 import os
 import json
-
 from functools import wraps
 from src.models.ai_agent import AIAgent
-from src.models.audio_controller import EntradaAudio, SaidaAudio
+from src.services.audio_controller import EntradaAudio, SaidaAudio
 from src.core.servicos import bot_servicos
 
 debug = True
@@ -41,7 +40,7 @@ def bot_debug_mode():
         funcao_nome = resposta["mensagem"]
         parametros = resposta.get("parametros", {})
         try:
-            resultado_funcao = bot_servicos(funcao_nome, **parametros)
+            print(bot_servicos(funcao_nome, **parametros))
         except Exception as e:
             print(f"Erro ao executar a função {funcao_nome}: {e}")
     print(resposta)

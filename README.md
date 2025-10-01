@@ -5,8 +5,9 @@ Este projeto é um assistente virtual desenvolvido em Python, que utiliza vária
 ## Funcionalidades
 - Reconhecimento de voz usando `speech_recognition`
 - Síntese de voz com `pyttsx3`
-- Integração com o ChatGPT via API
-- [Em desenvolvimento]
+- Integração com diversas IAs via `Puter.js`
+- Tocar música via Spotify (Necessita de conta Premium e um Linux com o Raspotify instalado)
+- 
 
 ```
 -- Em desenvolvimento --

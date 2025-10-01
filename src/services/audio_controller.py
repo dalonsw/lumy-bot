@@ -12,7 +12,8 @@ class EntradaAudio:
             audio = self.reader.listen(source)
 
         try:
-            texto = self.reader.recognize_google(audio, language="pt-BR")
+            texto = self.reader.recognize_google(audio, 
+                                                 language="pt-BR")
             print("Você disse: " + texto)
             return texto.lower()
         except sr.UnknownValueError:
