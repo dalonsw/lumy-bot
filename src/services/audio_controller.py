@@ -25,11 +25,12 @@ class EntradaAudio:
 
 class SaidaAudio:
     def __init__(self):
-        self.engine = pyttsx3.init()
+        pass
 
     def falar(self, texto):
         try:
-            self.engine.say(texto)
-            self.engine.runAndWait()
+            engine = pyttsx3.init()
+            engine.say(texto)
+            engine.runAndWait()
         except Exception as e:
             print(f"Erro na síntese de voz: {e}")

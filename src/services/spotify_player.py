@@ -2,7 +2,6 @@ import spotipy
 import os
 import dotenv
 from spotipy.oauth2 import SpotifyOAuth
-
 dotenv.load_dotenv()
 
 class SpotifyPlayer:
@@ -14,7 +13,8 @@ class SpotifyPlayer:
         self.redirect_uri = redirect_uri
         self.sp = None
         self.iniciar_sessao()
-        self.conectar_dispositivo(os.getenv("SPOTIFY_DEVICE_ID"))
+        self.conectar_dispositivo("RaspberryPi")
+
 
     def iniciar_sessao(self):
         self.sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
@@ -24,10 +24,15 @@ class SpotifyPlayer:
             scope="user-modify-playback-state,user-read-playback-state"
         ))
         
-    def conectar_dispositivo(self, device_id):
-        if self.sp:
-            self.sp.transfer_playback(device_id=device_id, 
-                                      force_play=True)
+    def conectar_dispositivo(self, nome_dispositivo):
+        dispositivos = self.sp.devices().get('devices', [])
+        for dispositivo in dispositivos:
+            if dispositivo['name'] == nome_dispositivo:
+                self.sp.transfer_playback(dispositivo['id'], force_play=False)
+                print(f"Conectado ao dispositivo: {nome_dispositivo}")
+                return
+
+# ==================== Controles de Reprodução ====================
 
     def buscar(self, pesquisa, tipo):
         if self.sp:
@@ -73,3 +78,20 @@ class SpotifyPlayer:
         if self.sp:
             self.sp.repeat(state=estado)
         
+    def volume(self, arg):
+        if self.sp:
+            status = self.sp.current_playback()
+            if status and 'device' in status:
+                volume_atual = status['device']['volume_percent']
+                if arg == 'aumentar':
+                    novo_volume = min(volume_atual + 10, 100)
+                elif arg == 'diminuir':
+                    novo_volume = max(volume_atual - 10, 0)
+                elif arg == 'mudo':
+                    novo_volume = 0
+                elif arg.isdigit():
+                    novo_volume = max(0, min(int(arg), 100))
+                else:
+                    return
+                self.sp.volume(novo_volume)
+                print(f"Volume ajustado para {novo_volume}%")
