@@ -6,4 +6,5 @@ pycache/
 .cache
 .vscode/
 
+./historico.txt
 TODO.md

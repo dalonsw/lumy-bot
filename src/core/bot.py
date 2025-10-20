@@ -1,108 +1,119 @@
 import datetime
 import json
 import asyncio
+
+from src.utils.notificacoes import Notificacoes
 from src.models.ai_agent import AIAgent
 from src.services.audio_controller import EntradaAudio, SaidaAudio
 from src.core.controller import Controlador
 
 # Configurações
-debug = True  # Coloque True para usar modo debug com input
-agenteIA = AIAgent("Zeca", max_tokens=500)
+bot_debug = True # Modo debug para entrada via texto
+agenteIA = AIAgent(max_tokens=1000)
 controlador = Controlador()
-entrada_audio = EntradaAudio()
+notificacoes = Notificacoes()
+entrada_audio = EntradaAudio(debug=True)
 saida_audio = SaidaAudio()
+volume_spotify_atual = str(controlador.volume_atual()) 
 
 # ==================== Funções do Bot ====================
 
-async def bot_listen():
-    """
-    Escuta o microfone e responde usando a IA
-    """
-    pergunta = await asyncio.to_thread(entrada_audio.ouvir_microfone)
-    await bot_core(pergunta)
-            
-            
-async def bot_debug_mode():
-    """
-    Modo debug: pergunta via input
-    """
-    pergunta = await asyncio.to_thread(input, "[MODO DEBUG] Insira sua pergunta: ")
-    await bot_core(pergunta)
+async def bot_ouvir():
+    try:
+        notificacoes.tocar_som_ativar()
+        pergunta = await asyncio.to_thread(
+            entrada_audio.ouvir_microfone
+            )
+        await bot_core(pergunta)
+    except Exception as e:
+        controlador.controlar_volume_fala(volume_spotify_atual)
 
+async def bot_debug_mode():
+    pergunta = await asyncio.to_thread(
+        input, "[MODO DEBUG] Insira sua pergunta: "
+        )
+    await bot_core(pergunta)
 
 async def bot_core(pergunta):
-    """
-    Função core do bot, que pode ser expandida futuramente
-    """
     try:
-        resposta_str = await asyncio.to_thread(agenteIA.perguntar, pergunta)
-        respostas = resposta_str.split('$')
-        for item in respostas:
+        resposta_str = await asyncio.to_thread(agenteIA.perguntar, 
+                                               pergunta)
+        respostas = resposta_str.split('&')
+        for resposta in respostas:
             try:
-                resposta = json.loads(item)
-                if resposta["tipo"] == "funcao":
-                    funcao_nome = resposta["mensagem"]
-                    parametros = resposta.get("parametros", {})
+                resposta_json = json.loads(resposta)
+                print(resposta_json)
+                if resposta_json["tipo"] == "funcao":
+                    funcao_nome = resposta_json["funcao"]
+                    parametros = resposta_json.get("parametros", {})
                     try:
-                        resultado = await asyncio.to_thread(
-                            controlador.executar_servico, funcao_nome, **parametros
+                        retorno = await asyncio.to_thread(
+                            controlador.executar_servico, funcao_nome, 
+                            **parametros
                         )
-    
+                        if retorno is not None:
+                            resumo_web = await asyncio.to_thread(
+                                agenteIA.perguntar, f"Resuma: {retorno}"
+                            )
+                            resumo_web_json = json.loads(resumo_web)
+                            await asyncio.to_thread(
+                                saida_audio.falar, 
+                                resumo_web_json['mensagem']
+                            )
                     except Exception as e:
-                        print(f"Erro ao executar a função {funcao_nome}: {e}")
-                else:
-                    # if resposta.get('dados_adicionais'):
-                    #     agenteIA.salvar_dados_adicionais([resposta.get('dados_adicionais', '')])
-                    asyncio.create_task(
-                        asyncio.to_thread(saida_audio.falar, resposta['mensagem'])
-                    )
-                print(f"Resposta do bot: {resposta}")
+                        print(f"Erro ao executar {funcao_nome}: {e}")
+                try:
+                    if resposta_json["mensagem"]:
+                        await asyncio.to_thread(saida_audio.falar, 
+                                                resposta_json["mensagem"])
+                except Exception as e:
+                    pass
             except json.JSONDecodeError as e:
                 print(f"Erro ao decodificar JSON: {e}")
-                print(f"Resposta recebida: {item}")
     except ValueError as e:
-        asyncio.create_task(
-            asyncio.to_thread(
-                saida_audio.falar,
-                "Você atingiu o limite de perguntas. Por favor, tente novamente mais tarde."
-            )
-        )
-
-        
-async def bot_lembrete():
-    """
-    Checa lembretes e fala os alertas
-    """
-    lembretes = controlador.lembretes.listar_lembretes()
-    if lembretes:
+        print(f"Erro ao processar a pergunta: {e}")
+   
+async def bot_alarmes():
+    alarmes = controlador.alarmes.listar_alarmes()
+    if alarmes:
         agora = datetime.datetime.now()
-        for lembrete in lembretes:
-            if lembrete['data_hora'] <= agora:
-                mensagem = f"Lembrete: {lembrete['atividade']} agora."
-                print(mensagem)
-                await asyncio.to_thread(saida_audio.falar, mensagem)
-                controlador.lembretes.remover_lembrete(lembrete['atividade'])
+        for alarme in alarmes:
+            if alarme['data_hora'] <= agora:
+                controlador.controlar_musica('pause')
+                mensagem = f"Lembrete: {alarme['atividade']}"
+                saida_audio.falar(mensagem)
+                # Testar se o som para ao chamar a lumy
+                await asyncio.to_thread(notificacoes.tocar_som_alarme)
+                controlador.alarmes.remover_alarme(alarme['atividade'])
 
 # ==================== Loops principais ====================
 
 async def rodar_bot():
     while True:
-        if debug:
+        if bot_debug:
             await bot_debug_mode()
         else:
-            await bot_listen()
-        await asyncio.sleep(0.1)
+            await chamar_bot()
 
-
-async def rodar_lembretes():
+async def rodar_alarmes():
     while True:
-        await bot_lembrete()
+        await bot_alarmes()
         await asyncio.sleep(1)
+        
+async def chamar_bot():
+    chamada = await asyncio.to_thread(entrada_audio.ouvir_microfone)
+    try:
+        if "lume" in chamada:
+            controlador.controlar_volume_fala('40')
+            saida_audio.parar()
+            await bot_ouvir()
+    except Exception as e:
+        print(e)
 
 # ==================== Função principal ====================
 
 async def bot_main():
     await asyncio.gather(
         rodar_bot(),
-        rodar_lembretes(),
+        rodar_alarmes()
     )

@@ -1,37 +1,51 @@
 import os
 import datetime
 import dotenv
-from src.services.lembretes import Lembretes
-from src.services.spotify_player import SpotifyPlayer
+from threading import Timer
+from src.services.alarmes import Alarmes
+from src.services.spotify import SpotifyPlayer
+from src.services.busca_web import BuscaWeb
 dotenv.load_dotenv()
 
 class Controlador:
     def __init__(self):
-        self.lembretes = Lembretes()
+        self.alarmes = Alarmes()
+        self.busca_web = BuscaWeb()
         self.spotify = SpotifyPlayer()
         self.servicos_registrados = {
             'tocar_musica': self.tocar_musica,
             'controlar_musica': self.controlar_musica,
-            'definir_lembrete': self.definir_lembrete,
-            'listar_lembretes': self.listar_lembretes,
-            'apagar_lembrete': self.remover_lembrete,
-            'alertar_lembrete': self.alertar_lembrete,
-            'alterar_lembrete': self.alterar_lembrete,
+            'definir_alarme': self.definir_alarme,
+            'listar_alarmes': self.listar_alarmes,
+            'apagar_alarme': self.remover_alarme,
+            'alertar_alarme': self.modificar_alarme,
+            'alterar_alarme': self.alterar_alarme,
+            'buscar_web': self.buscar_web,
         }
         
     # ==================== Serviços de Spotify ====================
     
     def tocar_musica(self, busca, tipo):
-        self.spotify.conectar_dispositivo(os.getenv("SPOTIFY_DEVICE_ID"))
+        dispositivo_principal = os.getenv("SPOTIFY_DEVICE_NAME")
+        if self.spotify.dispositivo_conectado() != dispositivo_principal:
+            self.spotify.conectar_dispositivo(dispositivo_principal)
+            
         uri = self.spotify.buscar(busca, tipo)
         if uri:
-            self.spotify.play(uri)
-        return f"Tocando {busca} no Spotify."
+            self.spotify.pausar()
+            Timer(1, self.spotify.tocar, args=[uri]).start()
+
+    def controlar_volume_fala(self, nivel):
+        if self.spotify.musica_tocando():
+            self.spotify.volume(nivel)
+            
+    def volume_atual(self):
+        return self.spotify.obter_volume_atual()
 
     def controlar_musica(self, acao, args=None):
         acoes = {
             'play': self.spotify.retomar,
-            'pause': self.spotify.parar,
+            'pause': self.spotify.pausar,
             'next': self.spotify.proxima,
             'previous': self.spotify.anterior,
             'aleatorio': self.spotify.aleatorio,
@@ -39,46 +53,55 @@ class Controlador:
             'volume': self.spotify.volume
         }
         try:
-            if args:
+            if args is not None:
                 acoes[acao](args)
             else:
                 acoes[acao]()
         except TypeError as e:
             print(f"Erro ao executar a ação '{acao}': {e}")
-    
-    # ==================== Serviços de Lembretes ====================
-            
-    def alertar_lembrete(self):
-        return self.lembretes.alertar_lembrete()
 
-    def definir_lembrete(self, atividade, data_hora):
+    # ==================== Serviços de Busca ====================
+
+    def buscar_web(self, busca: str) -> str:
+        return self.busca_web.buscar(busca)
+
+    # ==================== Serviços de Alarmes ====================
+
+    def modificar_alarme(self, atividade, nova_data_hora):
+        nova_data_hora = datetime.datetime.strptime(nova_data_hora, 
+                                                    "%Y-%m-%d %H:%M:%S")
+        self.alarmes.modificar_alarme(atividade, nova_data_hora)
+
+    def definir_alarme(self, atividade, data_hora):
         data_hora = datetime.datetime.strptime(data_hora, "%Y-%m-%d %H:%M:%S")
-        self.lembretes.adicionar_lembrete(atividade, data_hora)
-        return f"Lembrete definido para {atividade} em {data_hora}."
+        self.alarmes.adicionar_alarme(atividade, data_hora)
 
-    def alterar_lembrete(self, atividade, nova_data_hora):
-        nova_data_hora = datetime.datetime.strptime(nova_data_hora, "%Y-%m-%d %H:%M:%S")
-        self.lembretes.alterar_lembrete(atividade, nova_data_hora)
-        return f"Lembrete alterado para {atividade} em {nova_data_hora}."
+    def alterar_alarme(self, atividade, nova_data_hora):
+        nova_data_hora = datetime.datetime.strptime(nova_data_hora, 
+                                                    "%Y-%m-%d %H:%M:%S")
+        self.alarmes.alterar_alarme(atividade, nova_data_hora)
 
-    def listar_lembretes(self):
-        lembretes = self.lembretes.listar_lembretes()
-        if not lembretes:
-            return "Nenhum lembrete definido."
+    def listar_alarmes(self):
+        alarmes = self.alarmes.listar_alarmes()
+        if not alarmes:
+            return "Nenhum alarme definido."
         mensagens = [
-            f"{lembrete['atividade']} em {lembrete['data_hora']}" 
-            for lembrete in lembretes
+            f"{alarme['atividade']} em {alarme['data_hora']}" 
+            for alarme in alarmes
         ]
-        return "Lembretes:\n" + "\n".join(mensagens)
-    
-    def remover_lembrete(self, atividade):
-        self.lembretes.remover_lembrete(atividade)
-        return f"Lembrete removido para {atividade}"
+
+    def remover_alarme(self, atividade):
+        self.alarmes.remover_alarme(atividade)
+        
+    # ==================== Execução de Serviços ====================
 
     def executar_servico(self, funcao_nome, *args, **kwargs) -> None:
-        if funcao_nome in self.servicos_registrados:
-            return self.servicos_registrados[funcao_nome](*args, **kwargs)
-        else:
-            raise ValueError(
-                f"Função '{funcao_nome}' não está registrada nos serviços."
-            )
+        try:
+            if funcao_nome in self.servicos_registrados:
+                return self.servicos_registrados[funcao_nome](*args, **kwargs)
+            else:
+                raise ValueError(
+                    f"Função '{funcao_nome}' não está registrada nos serviços."
+                )
+        except Exception as e:
+            print(f"Ocorreu um erro ao tentar executar os serviços: {e}")
