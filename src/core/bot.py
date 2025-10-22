@@ -38,7 +38,10 @@ async def bot_core(pergunta):
     try:
         resposta_str = await asyncio.to_thread(agenteIA.perguntar, 
                                                pergunta)
-        respostas = resposta_str.split('&')
+        if "&" in resposta_str:
+            respostas = resposta_str.split('&')
+        else:
+            respostas = [resposta_str]
         for resposta in respostas:
             try:
                 resposta_json = json.loads(resposta)
@@ -78,7 +81,9 @@ async def bot_alarmes():
     if alarmes:
         agora = datetime.datetime.now()
         for alarme in alarmes:
-            if alarme['data_hora'] <= agora:
+            alarme_data_hora = datetime.datetime.strptime(alarme['data_hora'], 
+                                                          "%Y-%m-%d %H:%M:%S")
+            if alarme_data_hora <= agora:
                 controlador.controlar_musica('pause')
                 mensagem = f"Lembrete: {alarme['atividade']}"
                 saida_audio.falar(mensagem)

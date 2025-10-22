@@ -1,9 +1,11 @@
 import datetime
+import json
 
 class Alarmes:
-    def __init__(self, cache_file='./src/cache/alarms.json'):
+    def __init__(self, cache_file='./src/cache/alarmes.json'):
         self.alarmes = []
         self.cache_file = cache_file
+        self.carregar_alarmes()
 
     def adicionar_alarme(self, atividade, data_hora, repetir=None):
         alarme = {
@@ -12,7 +14,8 @@ class Alarmes:
             'repetir': repetir
         }
         self.alarmes.append(alarme)
-
+        self.salvar_alarmes()
+        
     def listar_alarmes(self):
         return self.alarmes
 
@@ -20,6 +23,7 @@ class Alarmes:
         for alarme in self.alarmes:
             if alarme['atividade'] == atividade:
                 alarme['data_hora'] = nova_data_hora
+                self.salvar_alarmes()
                 return True
         return False
 
@@ -27,6 +31,7 @@ class Alarmes:
         for alarme in self.alarmes:
             if alarme['atividade'] == atividade:
                 self.alarmes.remove(alarme)
+                self.salvar_alarmes()
                 return True
         return False
 
@@ -38,3 +43,10 @@ class Alarmes:
                 alertas.append(alarme)
         return alertas
     
+    def salvar_alarmes(self):
+        with open(self.cache_file, 'w') as f:
+            json.dump(self.alarmes, f, default=str)
+            
+    def carregar_alarmes(self):
+        with open(self.cache_file, 'r') as f:
+            self.alarmes = json.load(f)

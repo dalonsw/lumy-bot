@@ -1,7 +1,7 @@
 import os
+import pygame
 import wave
 import speech_recognition as sr
-import pygame
 from piper import PiperVoice
 
 class EntradaAudio:

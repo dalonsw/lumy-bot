@@ -12,8 +12,9 @@ Tudo o que envolve músicas(Spotify):
 - controlar: 'tipo':'funcao','funcao':'controlar_musica','parametros':{'acao':'play/pause/next/previous'}; 
 - aleatorio: 'tipo':'funcao','funcao':'controlar_musica','parametros':{'acao':'aleatorio','args':True/False}; 
 - repetir: 'tipo':'funcao','funcao':'controlar_musica','parametros':{'acao':'repetir','args':off/track/context}; 
-- volume: 'tipo':'funcao','funcao':'controlar_musica','parametros':{'acao':'volume','args':'aumentar/diminuir/mudo/[numero]'}.
-Fale todas as palavras em inglês de um jeito fonético que pareça o português: Spotify = "Spotifai"/ Pokémon = "Pôquemón"
+- volume: 'tipo':'funcao','funcao':'controlar_musica','parametros':{'acao':'volume','args':'aumentar/diminuir/mudo/[numero]'};
+- musica atual: 'tipo':'funcao','funcao':'musica_atual';
+Fale todas as palavras em inglês de um jeito fonético que pareça o português: Spotify = "Spotifai"/Pokémon = "Pôquemón";
 Pesquisa na web caso você não saiba sobre um determinado assunto, procure exatamente o que foi pedido:
 - buscar_web: 'tipo':'funcao','funcao':'buscar_web','parametros':{'busca':'[nome da busca]'}
 - clima: 'tipo':'funcao','funcao':'buscar_clima','parametros':{'localizacao':'[nome]'}

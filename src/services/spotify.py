@@ -13,18 +13,21 @@ class SpotifyPlayer:
         self.redirect_uri = redirect_uri
         self.sp = None
         self.iniciar_sessao()
-
+        
+        
     def iniciar_sessao(self):
         try:
             self.sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
                 client_id=self.id_cliente,
                 client_secret=self.client_secret,
                 redirect_uri=self.redirect_uri,
-                scope="user-modify-playback-state,user-read-playback-state"
+                scope="user-modify-playback-state,user-read-playback-state",
+                cache_path=".cache"
             ))
+            self.conectar_dispositivo(os.getenv("SPOTIFY_DEVICE_NAME"))
         except Exception as e:
-            print(f"Ocorreu um erro ao iniciar a sessão no Spotify")
-        
+            print(f"Ocorreu um erro ao iniciar a sessão no Spotify: {e}")
+
     def conectar_dispositivo(self, nome_dispositivo):
         dispositivos = self.sp.devices().get('devices', [])
         for dispositivo in dispositivos:
@@ -118,6 +121,17 @@ class SpotifyPlayer:
         except Exception as e:
             print(f"Ocorreu um erro ao obter o volume atual: {e}")
             
+    def musica_atual(self):
+        if self.sp:
+            status = self.sp.current_playback()
+            if status and status.get('item'):
+                musica = status['item']
+                artistas = ', '.join([artista['name'] for artista in musica['artists']])
+                nome_musica = musica['name']
+                return f"Tocando agora: {nome_musica} por {artistas}"
+        return "Nenhuma música está sendo reproduzida no momento."
+
 if __name__ == "__main__":
     player = SpotifyPlayer()
-    print(f"Dispositivo conectado: {player.dispositivo_conectado()}")
+    dispositivos = player.sp.devices()
+    print(dispositivos)

@@ -14,3 +14,4 @@ class BuscaWeb:
             [f"{res['body']}. " for i, res in enumerate(resultados)]
         )
         return resultados_formatados
+
