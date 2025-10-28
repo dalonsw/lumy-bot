@@ -18,7 +18,7 @@ class EntradaAudio:
                                        phrase_time_limit=10)
         try:
             texto = self.reader.recognize_google(audio, 
-                                                 language="pt-BR")
+                                                 language="pt-BR, en-US")
             if self.debug:
                 print(f"[MODO DEBUG] Você disse: {texto}")
             return texto.lower()

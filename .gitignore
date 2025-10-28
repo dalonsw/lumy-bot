@@ -5,6 +5,5 @@ venv/
 pycache/
 .cache
 .vscode/
-
-./historico.txt
 TODO.md
+output.wav

@@ -14,17 +14,14 @@ controlador = Controlador()
 notificacoes = Notificacoes()
 entrada_audio = EntradaAudio(debug=True)
 saida_audio = SaidaAudio()
-volume_spotify_atual = str(controlador.volume_atual()) 
+volume_spotify_atual = str(controlador.volume_atual())
 
 # ==================== Funções do Bot ====================
 
-async def bot_ouvir():
+async def bot_processar(comando):
     try:
-        notificacoes.tocar_som_ativar()
-        pergunta = await asyncio.to_thread(
-            entrada_audio.ouvir_microfone
-            )
-        await bot_core(pergunta)
+        await bot_core(comando)
+        controlador.controlar_volume_fala(volume_spotify_atual)
     except Exception as e:
         controlador.controlar_volume_fala(volume_spotify_atual)
 
@@ -75,6 +72,7 @@ async def bot_core(pergunta):
                 print(f"Erro ao decodificar JSON: {e}")
     except ValueError as e:
         print(f"Erro ao processar a pergunta: {e}")
+    volume_spotify_atual = str(controlador.volume_atual())
    
 async def bot_alarmes():
     alarmes = controlador.alarmes.listar_alarmes()
@@ -98,20 +96,22 @@ async def rodar_bot():
         if bot_debug:
             await bot_debug_mode()
         else:
-            await chamar_bot()
+            await iniciar_bot()
 
 async def rodar_alarmes():
     while True:
         await bot_alarmes()
         await asyncio.sleep(1)
-        
-async def chamar_bot():
-    chamada = await asyncio.to_thread(entrada_audio.ouvir_microfone)
+
+async def iniciar_bot():
+    audio_transcrito = await asyncio.to_thread(entrada_audio.ouvir_microfone)
+    wake_words = ["lume", "lumi"]
     try:
-        if "lume" in chamada:
-            controlador.controlar_volume_fala('40')
+        if any(wake_word in audio_transcrito for wake_word in wake_words):
+            comando = audio_transcrito.split("lume",1)[1].strip()
+            # controlador.controlar_volume_fala('40')
             saida_audio.parar()
-            await bot_ouvir()
+            await bot_processar(comando)
     except Exception as e:
         print(e)
 
@@ -122,3 +122,4 @@ async def bot_main():
         rodar_bot(),
         rodar_alarmes()
     )
+    

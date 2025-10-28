@@ -24,7 +24,6 @@ class SpotifyPlayer:
                 scope="user-modify-playback-state,user-read-playback-state",
                 cache_path=".cache"
             ))
-            self.conectar_dispositivo(os.getenv("SPOTIFY_DEVICE_NAME"))
         except Exception as e:
             print(f"Ocorreu um erro ao iniciar a sessão no Spotify: {e}")
 
@@ -32,7 +31,7 @@ class SpotifyPlayer:
         dispositivos = self.sp.devices().get('devices', [])
         for dispositivo in dispositivos:
             if dispositivo['name'] == nome_dispositivo:
-                self.sp.transfer_playback(dispositivo['id'], force_play=False)
+                self.sp.transfer_playback(dispositivo['id'], force_play=True)
                 print(f"Conectado ao dispositivo: {nome_dispositivo}")
                 return
     
@@ -132,6 +131,5 @@ class SpotifyPlayer:
         return "Nenhuma música está sendo reproduzida no momento."
 
 if __name__ == "__main__":
-    player = SpotifyPlayer()
-    dispositivos = player.sp.devices()
-    print(dispositivos)
+    spotify = SpotifyPlayer()
+    print(spotify.sp.devices())

@@ -36,6 +36,7 @@ class Controlador:
                 self.spotify.conectar_dispositivo(dispositivo_principal)
                 
             uri = self.spotify.buscar(busca, tipo)
+            
             if uri:
                 self.spotify.pausar()
                 Timer(1, self.spotify.tocar, args=[uri]).start()
