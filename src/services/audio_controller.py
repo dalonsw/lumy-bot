@@ -1,8 +1,6 @@
-import os
 import pygame
-import wave
 import speech_recognition as sr
-from piper import PiperVoice
+from src.models.speechma import Speechma
 
 class EntradaAudio:
     def __init__(self, debug=False):
@@ -15,7 +13,7 @@ class EntradaAudio:
             if self.debug:
                 print("[MODO DEBUG] Ouvindo...")
             audio = self.reader.listen(source, timeout=0, 
-                                       phrase_time_limit=10)
+                                       phrase_time_limit=1000)
         try:
             texto = self.reader.recognize_google(audio, 
                                                  language="pt-BR, en-US")
@@ -31,29 +29,25 @@ class EntradaAudio:
 
 class SaidaAudio:
     def __init__(self, 
-                 voice='./src/assets/tts-models/pt_BR-dii.onnx',
-                 aquivo_wav='./src/assets/sounds/output.wav'):
+                 voice='voice-221',
+                 path='./src/assets/sounds/'):
+        self.path = path
         self.voice = voice
-        self.aquivo_wav = aquivo_wav
-        self.piper = PiperVoice.load(self.voice)
+        self.speech_man = Speechma(voice_id=self.voice, 
+                                    directory=self.path)
 
     def falar(self, texto):
         try:
-            if not os.path.exists(os.path.dirname(self.aquivo_wav)):
-                os.makedirs(os.path.dirname(self.aquivo_wav))
-                
-            with wave.open(self.aquivo_wav, "wb") as wav_file:
-                self.piper.synthesize_wav(texto, wav_file)
-                
+            self.speech_man.gerar_audio(texto)
+
             pygame.mixer.init()
-            pygame.mixer.music.load(self.aquivo_wav)
+            pygame.mixer.music.load(self.path + "output.mp3")
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():
                 pygame.time.Clock().tick(10)
             pygame.mixer.quit()
         except Exception as e:
             print(f"Erro ao sintetizar voz: {e}")
-            pygame.mixer.quit()
 
     def parar(self):
         try:

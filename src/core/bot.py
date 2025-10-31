@@ -8,7 +8,7 @@ from src.services.audio_controller import EntradaAudio, SaidaAudio
 from src.core.controller import Controlador
 
 # Configurações
-bot_debug = True # Modo debug para entrada via texto
+bot_debug = False # Modo debug para entrada via texto
 agenteIA = AIAgent(max_tokens=1000)
 controlador = Controlador()
 notificacoes = Notificacoes()
@@ -107,13 +107,14 @@ async def iniciar_bot():
     audio_transcrito = await asyncio.to_thread(entrada_audio.ouvir_microfone)
     wake_words = ["lume", "lumi"]
     try:
-        if any(wake_word in audio_transcrito for wake_word in wake_words):
-            comando = audio_transcrito.split("lume",1)[1].strip()
-            # controlador.controlar_volume_fala('40')
-            saida_audio.parar()
-            await bot_processar(comando)
+        for wake_word in wake_words:
+            if wake_word in audio_transcrito:
+                comando = audio_transcrito.split(wake_word,1)[1].strip()
+                if comando == "":
+                    raise ValueError("Nenhum comando detectado após a palavra de ativação.")
+                await bot_processar(comando)
     except Exception as e:
-        print(e)
+        pass
 
 # ==================== Função principal ====================
 

@@ -38,8 +38,7 @@ class Controlador:
             uri = self.spotify.buscar(busca, tipo)
             
             if uri:
-                self.spotify.pausar()
-                Timer(1, self.spotify.tocar, args=[uri]).start()
+                Timer(3, self.spotify.tocar, args=[uri]).start()
         except Exception as e:
             print(f"Erro: {e}")
             
