@@ -4,7 +4,7 @@ Este projeto é um assistente virtual desenvolvido em Python, que utiliza vária
 
 ## Funcionalidades
 - Reconhecimento de voz usando `speech_recognition`.
-- Síntese de voz com `piper` e `pygame`.
+- Síntese de voz com `speechma`.
 - Integração com IA.
 - Tocar música via Spotify.
 - Busca na web e informações do clima.
